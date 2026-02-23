@@ -323,8 +323,8 @@
 
       <!-- ESP32 pinout diagram -->
       <figure class="diagram-box">
-        <figcaption>ESP32-WROOM-32D — 30-pin DevKit V1</figcaption>
-        <svg id="esp32-svg" viewBox="0 0 370 510" xmlns="http://www.w3.org/2000/svg"></svg>
+        <figcaption>ESP32-WROOM-32D — 30-pin DevKit (EN top, USB-C bottom)</figcaption>
+        <svg id="esp32-svg" viewBox="0 0 370 440" xmlns="http://www.w3.org/2000/svg"></svg>
       </figure>
 
       <!-- HUB75E connector diagram -->
@@ -716,9 +716,8 @@ function line(x1,y1,x2,y2,attrs={}) {
   CONNECTIONS.forEach(c => { if (typeof c.gpio === 'number') sigMap[c.gpio] = c; });
 
   // 38-pin DevKit layout (left side then right side, top-down, USB at top)
-  // DOIT ESP32 DevKit V1 — 30-pin layout (3V3 top-left, GND top-right)
+  // ESP32-WROOM-32D 30-pin DevKit — EN at top, USB-C at bottom
   const LEFT_PINS = [
-    {label:'3V3', gpio:null},
     {label:'EN',  gpio:null},
     {label:'VP',  gpio:36},
     {label:'VN',  gpio:39},
@@ -731,43 +730,48 @@ function line(x1,y1,x2,y2,attrs={}) {
     {label:'IO27',gpio:27},
     {label:'IO14',gpio:14},
     {label:'IO12',gpio:12},
+    {label:'IO13',gpio:13},
     {label:'GND', gpio:null},
     {label:'VIN', gpio:null},
   ];
   const RIGHT_PINS = [
-    {label:'GND', gpio:null},
-    {label:'IO13',gpio:13},
-    {label:'IO9', gpio:9},
-    {label:'IO10',gpio:10},
-    {label:'IO11',gpio:11},
+    {label:'IO23',gpio:23},
+    {label:'IO22',gpio:22},
+    {label:'TX0', gpio:1},
+    {label:'RX0', gpio:3},
+    {label:'IO21',gpio:21},
+    {label:'IO19',gpio:19},
+    {label:'IO18',gpio:18},
     {label:'IO5', gpio:5},
     {label:'IO17',gpio:17},
     {label:'IO16',gpio:16},
     {label:'IO4', gpio:4},
-    {label:'IO0', gpio:0},
     {label:'IO2', gpio:2},
     {label:'IO15',gpio:15},
-    {label:'IO8', gpio:8},
-    {label:'IO7', gpio:7},
-    {label:'IO6', gpio:6},
+    {label:'GND', gpio:null},
+    {label:'3V3', gpio:null},
   ];
 
-  const N = 19;
+  const N = 15;
   const PIN_STEP = 24;
-  const PIN_Y0   = 60;
+  const PIN_Y0   = 50;
   const BODY_X   = 105;
   const BODY_W   = 160;
-  const BODY_Y   = 45;
+  const BODY_Y   = 35;
   const BODY_H   = PIN_STEP * (N-1) + 20;
   const DOT_R    = 4;
 
   // Background
-  svg.appendChild(rect(0,0,370,510,{fill:C.bg3}));
+  svg.appendChild(rect(0,0,370,440,{fill:C.bg3}));
 
-  // USB connector notch at top
-  svg.appendChild(rect(155, 5, 60, 18, {fill:'#444', rx:'3'}));
-  const usbTxt = text(185, 18, 'USB', {'font-size':'10', fill:C.muted, 'text-anchor':'middle'});
-  svg.appendChild(usbTxt);
+  // EN button at top
+  svg.appendChild(rect(160, 4, 50, 16, {fill:'#444', rx:'3'}));
+  svg.appendChild(text(185, 15, 'EN/RST', {'font-size':'9', fill:C.muted, 'text-anchor':'middle'}));
+
+  // USB-C connector at bottom
+  const usbY = BODY_Y + BODY_H + 8;
+  svg.appendChild(rect(155, usbY, 60, 16, {fill:'#444', rx:'3'}));
+  svg.appendChild(text(185, usbY+11, 'USB-C', {'font-size':'9', fill:C.muted, 'text-anchor':'middle'}));
 
   // Module body
   svg.appendChild(rect(BODY_X, BODY_Y, BODY_W, BODY_H, {fill:'#1a1a2e', stroke:C.border, 'stroke-width':'1.5', rx:'4'}));

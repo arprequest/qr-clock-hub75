@@ -20,11 +20,11 @@
 #define R2_PIN   14
 #define G2_PIN   12
 #define B2_PIN   13
-#define A_PIN    32   // remapped from 23 (not on 30-pin board)
-#define B_PIN    33   // remapped from 19 (not on 30-pin board)
+#define A_PIN    23
+#define B_PIN    19
 #define C_PIN     5
 #define D_PIN    17
-#define E_PIN     2   // remapped from 18 (not on 30-pin board)
+#define E_PIN    18   // required for 64-row (HUB75E) panels
 #define LAT_PIN   4
 #define OE_PIN   15
 #define CLK_PIN  16
