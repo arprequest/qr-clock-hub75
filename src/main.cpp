@@ -71,7 +71,8 @@ static void animTask(void *) {
             matrix->clearScreen();
         }
 
-        matrix->setBrightness8(s.brightness);
+        // Full brightness in QR mode eliminates PWM flicker for camera scanning
+        matrix->setBrightness8(s.mode == MODE_QR_CLOCK ? 255 : s.brightness);
 
         switch (s.mode) {
             case MODE_QR_CLOCK:    drawQRClock();     break;
