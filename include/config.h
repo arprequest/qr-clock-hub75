@@ -24,7 +24,7 @@
 #define B_PIN    19
 #define C_PIN     5
 #define D_PIN    17
-#define E_PIN    18   // required for 64-row (HUB75E) panels
+#define E_PIN    22   // moved from 18 — GPIO18 may conflict with I2S DMA
 #define LAT_PIN   4
 #define OE_PIN   15
 #define CLK_PIN  16
