@@ -51,7 +51,7 @@ static void showAPQR(const char *apName) {
             if (qrcode_getModule(&qr, x, y))
                 for (int dy = 0; dy < scale; dy++)
                     for (int dx = 0; dx < scale; dx++)
-                        matrix->drawPixel(ox + x*scale + dx, (oy + y*scale + dy + 32) & 63, white);
+                        matrix->drawPixel(ox + x*scale + dx, (oy + y*scale + dy + 48) & 63, white);
 }
 
 // ── Animation task — pinned to Core 1 ────────────────────────────
