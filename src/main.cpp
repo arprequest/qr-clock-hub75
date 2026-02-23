@@ -24,10 +24,8 @@ static void matrixInit() {
     cfg.gpio.d   = D_PIN;   cfg.gpio.e   = E_PIN;
     cfg.gpio.lat = LAT_PIN; cfg.gpio.oe  = OE_PIN;  cfg.gpio.clk = CLK_PIN;
     cfg.clkphase = false;
-    // Many cheap 64×64 panels use an FM6126A shift-register that needs an
-    // initialisation sequence.  If the display shows only a few rows or a
-    // distorted image, uncomment the line below and reflash:
     cfg.driver = HUB75_I2S_CFG::FM6126A;
+    cfg.latch_blanking = 1;
     matrix = new MatrixPanel_I2S_DMA(cfg);
     matrix->begin();
     matrix->clearScreen();

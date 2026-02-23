@@ -7,6 +7,13 @@
 
 extern MatrixPanel_I2S_DMA *matrix;
 
+// ── Row-offset correction ────────────────────────────────────────
+// Some FM6126A panels have a fixed 16-row vertical shift in their
+// DMA mapping.  Compensate by adding 48 (= 64-16) to every Y coord.
+static inline void px(int x, int y, uint16_t c) {
+    matrix->drawPixel(x, (y + 48) & 63, c);
+}
+
 // ── HSV → color565 ──────────────────────────────────────────────
 static uint16_t hsv565(uint8_t h, uint8_t s, uint8_t v) {
     uint8_t r, g, b;
@@ -53,7 +60,7 @@ static void drawQRClock() {
             if (qrcode_getModule(&qr, x, y))
                 for (int dy = 0; dy < scale; dy++)
                     for (int dx = 0; dx < scale; dx++)
-                        matrix->drawPixel(off + x*scale + dx, off + y*scale + dy, white);
+                        px(off + x*scale + dx, off + y*scale + dy, white);
 }
 
 // ── Solid ───────────────────────────────────────────────────────
@@ -67,7 +74,7 @@ static void drawRainbow(const AppState &s) {
     offset += 1 + (s.speed >> 5);
     for (int y = 0; y < 64; y++)
         for (int x = 0; x < 64; x++)
-            matrix->drawPixel(x, y, hsv565((uint8_t)(offset + x*4 + y*2), 255, s.brightness));
+            px(x, y, hsv565((uint8_t)(offset + x*4 + y*2), 255, s.brightness));
 }
 
 // ── Fire ────────────────────────────────────────────────────────
@@ -103,7 +110,7 @@ static void drawFire(const AppState &s) {
             else if (v < 128) { r = 192+(v-64);   g = (v-64)*2;    b = 0; }
             else if (v < 192) { r = 255;           g = 128+(v-128); b = 0; }
             else              { r = 255;           g = 255;         b = (v-192)*4; }
-            matrix->drawPixel(x, y, matrix->color565(r, g, b));
+            px(x, y, matrix->color565(r, g, b));
         }
     }
 }
@@ -145,7 +152,7 @@ static void drawMatrixRain(const AppState &s) {
 
     for (int y = 0; y < 64; y++)
         for (int x = 0; x < 64; x++)
-            matrix->drawPixel(x, y, matrix->color565(0, rainBuf[y][x], rainBuf[y][x] >> 2));
+            px(x, y, matrix->color565(0, rainBuf[y][x], rainBuf[y][x] >> 2));
 }
 
 // ── Plasma ──────────────────────────────────────────────────────
@@ -158,7 +165,7 @@ static void drawPlasma(const AppState &s) {
                     + sinf(y * 0.15f + t * 1.3f)
                     + sinf((x + y) * 0.1f + t * 0.7f);
             uint8_t hue = (uint8_t)((v + 3.0f) * 42.5f);
-            matrix->drawPixel(x, y, hsv565(hue, 255, s.brightness));
+            px(x, y, hsv565(hue, 255, s.brightness));
         }
     }
 }
