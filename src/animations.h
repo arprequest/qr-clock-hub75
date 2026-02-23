@@ -48,7 +48,7 @@ static void drawQRClock() {
     QRCode qr;
     char ts[6];
     strftime(ts, sizeof(ts), "%H:%M", &ti);
-    if (qrcode_initText(&qr, buf, 1, ECC_LOW, ts) != 0) return;
+    if (qrcode_initText(&qr, buf, 1, ECC_HIGH, ts) != 0) return;
 
     const int scale = 2;  // 21×2=42px, leaving 11px white border on all sides for quiet zone
     const int off   = (64 - qr.size * scale) / 2;
