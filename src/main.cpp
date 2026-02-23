@@ -14,6 +14,7 @@ MatrixPanel_I2S_DMA *matrix = nullptr;
 AppState              gState;
 SemaphoreHandle_t     gMutex;
 WiFiManager           wm;
+int8_t                gRowOffset = 48;  // adjust via serial to fix panel shift
 
 // ── Matrix init ──────────────────────────────────────────────────
 static void matrixInit() {
@@ -95,8 +96,8 @@ void setup() {
     gState.brightness = DEFAULT_BRIGHTNESS;
     matrixInit();
 
-    // Brief blue flash — confirms matrix is alive before WiFi blocks
-    matrix->fillScreen(matrix->color565(0, 0, 60));
+    // GREEN flash on boot — change to blue means old cached firmware is running
+    matrix->fillScreen(matrix->color565(0, 60, 0));
     delay(300);
     matrix->clearScreen();
 
@@ -131,5 +132,16 @@ void setup() {
 // ── loop — Core 0, web server housekeeping ────────────────────────
 void loop() {
     webServerTick();
+
+    // Serial offset tuning: type a number 0-63 and press Enter to adjust row offset.
+    // The correct value makes animations appear properly aligned on the panel.
+    if (Serial.available()) {
+        int v = Serial.parseInt();
+        if (v >= 0 && v <= 63) {
+            gRowOffset = (int8_t)v;
+            Serial.printf("rowOffset = %d\n", gRowOffset);
+        }
+    }
+
     delay(100);
 }

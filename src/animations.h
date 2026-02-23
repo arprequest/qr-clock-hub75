@@ -6,12 +6,11 @@
 #include "state.h"
 
 extern MatrixPanel_I2S_DMA *matrix;
+extern int8_t gRowOffset;
 
 // ── Row-offset correction ────────────────────────────────────────
-// Some FM6126A panels have a fixed 16-row vertical shift in their
-// DMA mapping.  Compensate by adding 48 (= 64-16) to every Y coord.
 static inline void px(int x, int y, uint16_t c) {
-    matrix->drawPixel(x, (y + 48) & 63, c);
+    matrix->drawPixel(x, (y + gRowOffset) & 63, c);
 }
 
 // ── HSV → color565 ──────────────────────────────────────────────
