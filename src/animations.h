@@ -53,14 +53,13 @@ static void drawQRClock() {
     const int scale = 2;  // 21×2=42px, leaving 11px white border on all sides for quiet zone
     const int off   = (64 - qr.size * scale) / 2;
     uint16_t white = matrix->color565(255, 255, 255);
-    uint16_t black = matrix->color565(0,   0,   0);
-    matrix->fillScreen(white);   // white background = built-in quiet zone + standard QR colours
+    matrix->clearScreen();
     for (int y = 0; y < qr.size; y++)
         for (int x = 0; x < qr.size; x++)
             if (qrcode_getModule(&qr, x, y))
                 for (int dy = 0; dy < scale; dy++)
                     for (int dx = 0; dx < scale; dx++)
-                        px(off + x*scale + dx, off + y*scale + dy, black);
+                        px(off + x*scale + dx, off + y*scale + dy, white);
 }
 
 // ── Solid ───────────────────────────────────────────────────────
