@@ -14,7 +14,7 @@ MatrixPanel_I2S_DMA *matrix = nullptr;
 AppState              gState;
 SemaphoreHandle_t     gMutex;
 WiFiManager           wm;
-int8_t                gRowOffset = 48;  // adjust via serial to fix panel shift
+int8_t                gRowOffset = 16;  // confirmed correct for this panel
 
 // ── Matrix init ──────────────────────────────────────────────────
 static void matrixInit() {
