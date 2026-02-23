@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Clock — ESP32 + 64×64 HUB75E Wiring Guide</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d1117;
+      --bg2:      #161b22;
+      --bg3:      #21262d;
+      --border:   #30363d;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --accent:   #58a6ff;
+      --red:      #ff5555;
+      --green:    #3fb950;
+      --blue:     #58a6ff;
+      --gold:     #e3b341;
+      --orange:   #f0883e;
+      --purple:   #bc8cff;
+      --pink:     #f778ba;
+      --gray:     #8b949e;
+      --mono:     'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ── Nav ───────────────────────────────────────── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+    }
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      padding: 12px 18px;
+      font-size: 13px;
+      white-space: nowrap;
+      transition: color .15s, border-bottom .15s;
+      border-bottom: 2px solid transparent;
+    }
+    nav a:hover { color: var(--text); border-bottom-color: var(--accent); }
+
+    /* ── Layout ────────────────────────────────────── */
+    .page { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+
+    header { margin-bottom: 48px; }
+    header h1 { font-size: 32px; font-weight: 700; margin-bottom: 6px; }
+    header p  { color: var(--muted); font-size: 16px; }
+    header .tags { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .tag {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    section { margin-bottom: 60px; }
+    h2 {
+      font-size: 22px;
+      font-weight: 600;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    h3 { font-size: 16px; font-weight: 600; margin: 28px 0 14px; color: var(--text); }
+
+    /* ── Parts list ────────────────────────────────── */
+    .parts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+    }
+    .part-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .part-card .part-name { font-weight: 600; margin-bottom: 4px; }
+    .part-card .part-note { font-size: 13px; color: var(--muted); }
+    .part-card .part-icon { font-size: 24px; margin-bottom: 8px; }
+
+    /* ── Diagram containers ────────────────────────── */
+    .diagrams-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 36px;
+    }
+    @media (max-width: 720px) { .diagrams-row { grid-template-columns: 1fr; } }
+
+    .diagram-box {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .diagram-box figcaption {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .diagram-box svg { display: block; max-width: 100%; height: auto; }
+
+    /* ── Connection table ──────────────────────────── */
+    .conn-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+    .conn-table th {
+      background: var(--bg3);
+      padding: 9px 14px;
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .conn-table td {
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .conn-table tr:last-child td { border-bottom: none; }
+    .conn-table tr:hover td { background: var(--bg3); }
+
+    .signal-dot {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      margin-right: 8px;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    .sig-cell { display: flex; align-items: center; }
+    .gpio-num  { color: var(--accent); font-weight: 700; }
+    .hub-pin   { color: var(--gold); }
+    .type-badge {
+      display: inline-block;
+      padding: 1px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* ── Callout boxes ─────────────────────────────── */
+    .callout {
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 20px 0;
+      border-left: 4px solid;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    .callout-warn  { background: #2d1f00; border-color: var(--orange); }
+    .callout-info  { background: #0d1f33; border-color: var(--accent); }
+    .callout-tip   { background: #0d2010; border-color: var(--green); }
+    .callout strong { display: block; margin-bottom: 4px; }
+
+    /* ── Code blocks ───────────────────────────────── */
+    .code-block {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-family: var(--mono);
+      font-size: 13px;
+      overflow-x: auto;
+      line-height: 1.6;
+    }
+    .code-block .comment { color: var(--muted); }
+    .code-block .kw      { color: var(--purple); }
+    .code-block .val     { color: var(--gold); }
+
+    /* ── Steps ─────────────────────────────────────── */
+    .steps { counter-reset: step; list-style: none; }
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+      align-items: flex-start;
+    }
+    .steps li::before {
+      content: counter(step);
+      min-width: 28px; height: 28px;
+      background: var(--accent);
+      color: var(--bg);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .steps li .step-content { flex: 1; }
+    .steps li .step-title { font-weight: 600; margin-bottom: 4px; }
+    .steps li .step-desc   { font-size: 14px; color: var(--muted); }
+
+    /* ── Power diagram ──────────────────────────────── */
+    .power-diagram {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      overflow-x: auto;
+    }
+
+    /* ── Troubleshooting ───────────────────────────── */
+    .trouble-list { list-style: none; }
+    .trouble-list li {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 10px;
+    }
+    .trouble-list .symptom { font-weight: 600; margin-bottom: 4px; }
+    .trouble-list .fix     { font-size: 14px; color: var(--muted); }
+
+    code {
+      font-family: var(--mono);
+      background: var(--bg3);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: .9em;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="#parts">Parts</a>
+  <a href="#wiring">Wiring</a>
+  <a href="#power">Power</a>
+  <a href="#software">Software</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+</nav>
+
+<div class="page">
+
+  <header>
+    <h1>QR Clock</h1>
+    <p>Displays the current time as a live QR code on a 64×64 RGB LED matrix.</p>
+    <div class="tags">
+      <span class="tag">ESP32-WROOM-32D</span>
+      <span class="tag">HUB75E P2.5 64×64</span>
+      <span class="tag">PlatformIO</span>
+      <span class="tag">NTP / WiFi</span>
+    </div>
+  </header>
+
+  <!-- ════════════════════════════════════════════════════
+       PARTS
+       ════════════════════════════════════════════════════ -->
+  <section id="parts">
+    <h2>Parts</h2>
+    <div class="parts-grid">
+      <div class="part-card">
+        <div class="part-icon">🧠</div>
+        <div class="part-name">ESP32-WROOM-32D (38-pin DevKit)</div>
+        <div class="part-note">Any 38-pin ESP32 dev board works. The 30-pin version also works — check GPIO labels carefully.</div>
+      </div>
+      <div class="part-card">
+        <div class="part-icon">🟥</div>
+        <div class="part-name">64×64 HUB75E P2.5 RGB Panel</div>
+        <div class="part-note">Must be HUB75<strong>E</strong> (5 address lines) for 64-row operation. Label on PCB: <em>HUB-75E P25 64×64-32</em>.</div>
+      </div>
+      <div class="part-card">
+        <div class="part-icon">⚡</div>
+        <div class="part-name">5 V / 4 A power supply</div>
+        <div class="part-note">Panel draws up to ~4 A at full brightness. A quality USB-C PD adapter (65 W) or a dedicated 5 V bench supply works well.</div>
+      </div>
+      <div class="part-card">
+        <div class="part-icon">🔌</div>
+        <div class="part-name">16-pin IDC ribbon cable</div>
+        <div class="part-note">Usually included with the panel. Red stripe = Pin 1. Plugs into the <em>IN</em> port on the panel.</div>
+      </div>
+      <div class="part-card">
+        <div class="part-icon">🪛</div>
+        <div class="part-name">Jumper wires</div>
+        <div class="part-note">Male-to-female (ESP32 header → IDC breakout or direct solder). ~16 wires needed.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════
+       WIRING
+       ════════════════════════════════════════════════════ -->
+  <section id="wiring">
+    <h2>Wiring</h2>
+
+    <div class="callout callout-info">
+      <strong>3.3 V logic is fine</strong>
+      The ESP32 outputs 3.3 V logic levels. HUB75E panels accept these directly — no level shifter is needed.
+    </div>
+
+    <div class="diagrams-row">
+
+      <!-- ESP32 pinout diagram -->
+      <figure class="diagram-box">
+        <figcaption>ESP32-WROOM-32D — 38-pin DevKit</figcaption>
+        <svg id="esp32-svg" viewBox="0 0 370 510" xmlns="http://www.w3.org/2000/svg"></svg>
+      </figure>
+
+      <!-- HUB75E connector diagram -->
+      <figure class="diagram-box">
+        <figcaption>HUB75E — 16-pin IDC connector (IN port, face view)</figcaption>
+        <svg id="hub75-svg" viewBox="0 0 320 380" xmlns="http://www.w3.org/2000/svg"></svg>
+      </figure>
+
+    </div>
+
+    <h3>Connection Reference</h3>
+    <table class="conn-table">
+      <thead>
+        <tr>
+          <th>Signal</th>
+          <th>Type</th>
+          <th>ESP32 GPIO</th>
+          <th>HUB75E Pin</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody id="conn-tbody"></tbody>
+    </table>
+
+    <div class="callout callout-warn" style="margin-top:24px">
+      <strong>⚠️ HUB75E — use the IN port</strong>
+      The panel has two IDC connectors labelled <em>IN</em> and <em>OUT</em>.
+      The ESP32 ribbon cable plugs into <strong>IN</strong>. Pin 1 (red stripe on cable) aligns with the triangle/arrow marker on the PCB.
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════
+       POWER
+       ════════════════════════════════════════════════════ -->
+  <section id="power">
+    <h2>Power Supply</h2>
+
+    <div class="callout callout-warn">
+      <strong>⚠️ Never power the matrix from the ESP32</strong>
+      The ESP32's 5 V (VIN) pin can source only ~500 mA from USB.
+      A 64×64 panel at even 40 % brightness needs ~1.5–2 A.
+      Power the panel directly from a dedicated 5 V supply.
+    </div>
+
+    <div class="power-diagram">
+      <svg viewBox="0 0 780 220" xmlns="http://www.w3.org/2000/svg" style="max-width:780px;width:100%">
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#8b949e"/>
+          </marker>
+        </defs>
+
+        <!-- 5V Supply -->
+        <rect x="20" y="70" width="130" height="80" rx="8" fill="#21262d" stroke="#30363d" stroke-width="1.5"/>
+        <text x="85" y="105" fill="#e6edf3" font-size="14" font-weight="600" text-anchor="middle" font-family="sans-serif">5 V Supply</text>
+        <text x="85" y="122" fill="#8b949e" font-size="11" text-anchor="middle" font-family="sans-serif">≥ 4 A</text>
+
+        <!-- Panel -->
+        <rect x="400" y="30" width="160" height="160" rx="8" fill="#21262d" stroke="#30363d" stroke-width="1.5"/>
+        <text x="480" y="100" fill="#e6edf3" font-size="14" font-weight="600" text-anchor="middle" font-family="sans-serif">64×64</text>
+        <text x="480" y="118" fill="#e6edf3" font-size="14" font-weight="600" text-anchor="middle" font-family="sans-serif">HUB75E Panel</text>
+        <text x="480" y="140" fill="#8b949e" font-size="11" text-anchor="middle" font-family="sans-serif">5 V PWR connector</text>
+
+        <!-- ESP32 -->
+        <rect x="400" y="50" width="120" height="100" rx="8" fill="#21262d" stroke="#30363d" stroke-width="1.5" x="580"/>
+        <rect x="590" y="70" width="130" height="80" rx="8" fill="#21262d" stroke="#30363d" stroke-width="1.5"/>
+        <text x="655" y="105" fill="#e6edf3" font-size="14" font-weight="600" text-anchor="middle" font-family="sans-serif">ESP32</text>
+        <text x="655" y="122" fill="#8b949e" font-size="11" text-anchor="middle" font-family="sans-serif">USB power</text>
+
+        <!-- 5V wire: supply → panel -->
+        <line x1="150" y1="100" x2="398" y2="100" stroke="#ff5555" stroke-width="2.5" marker-end="url(#arr)"/>
+        <text x="274" y="94" fill="#ff5555" font-size="12" font-weight="600" text-anchor="middle" font-family="sans-serif">5 V</text>
+
+        <!-- GND wire: supply → panel (offset down) -->
+        <line x1="150" y1="116" x2="398" y2="116" stroke="#8b949e" stroke-width="2.5" marker-end="url(#arr)"/>
+        <text x="274" y="132" fill="#8b949e" font-size="12" text-anchor="middle" font-family="sans-serif">GND</text>
+
+        <!-- Data ribbon: ESP32 → panel -->
+        <line x1="590" y1="95" x2="562" y2="95" stroke="#58a6ff" stroke-width="2" marker-end="url(#arr)"/>
+        <text x="576" y="88" fill="#58a6ff" font-size="11" text-anchor="middle" font-family="sans-serif">16-pin</text>
+        <text x="576" y="102" fill="#58a6ff" font-size="11" text-anchor="middle" font-family="sans-serif">ribbon</text>
+
+        <!-- USB → ESP32 -->
+        <line x1="720" y1="100" x2="724" y2="100" stroke="none"/>
+        <text x="740" y="105" fill="#8b949e" font-size="12" font-family="sans-serif">← USB</text>
+
+        <!-- GND tie note -->
+        <rect x="20" y="185" width="700" height="26" rx="5" fill="#0d1f33" stroke="#1f3a5f"/>
+        <text x="370" y="202" fill="#58a6ff" font-size="12" text-anchor="middle" font-family="sans-serif">
+          Connect supply GND and ESP32 GND together — they must share a common ground.
+        </text>
+      </svg>
+    </div>
+
+    <h3>Panel Power Connector</h3>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:12px">
+      The panel PCB has a 2-pin JST or screw-terminal power input (separate from the IDC signal connector).
+      Connect your 5 V supply directly there. Polarity is usually marked on the PCB.
+    </p>
+
+    <div class="callout callout-tip">
+      <strong>Brightness vs. current</strong>
+      <code>MATRIX_BRIGHTNESS</code> in <code>config.h</code> defaults to 100 (≈ 40 %).
+      At that level the panel draws roughly 1–2 A. A cheap 5 V 3 A phone charger is sufficient for testing.
+      Raise brightness only after confirming your supply can handle it.
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════
+       SOFTWARE
+       ════════════════════════════════════════════════════ -->
+  <section id="software">
+    <h2>Software Setup</h2>
+
+    <div class="callout callout-info">
+      <strong>Windows flashing</strong>
+      All steps below use <strong>VS Code + PlatformIO on Windows</strong>.
+      No WSL, no Linux tools required — everything runs natively.
+    </div>
+
+    <ol class="steps">
+      <li>
+        <div class="step-content">
+          <div class="step-title">Install the USB serial driver</div>
+          <div class="step-desc">
+            Most ESP32 DevKit boards use one of two USB chips. Check the small IC near the USB port:
+            <br><br>
+            <table style="width:100%;font-size:13px;border-collapse:collapse">
+              <tr style="background:var(--bg3)">
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)">Chip marking</th>
+                <th style="padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)">Driver</th>
+              </tr>
+              <tr>
+                <td style="padding:7px 10px;border-bottom:1px solid var(--border)"><code>CP2102</code> or <code>CP2104</code></td>
+                <td style="padding:7px 10px;border-bottom:1px solid var(--border)">Silicon Labs CP210x — <a href="https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers" style="color:var(--accent)">silabs.com</a></td>
+              </tr>
+              <tr>
+                <td style="padding:7px 10px"><code>CH340</code> or <code>CH341</code></td>
+                <td style="padding:7px 10px">WCH CH340 — <a href="https://www.wch-ic.com/products/CH340.html" style="color:var(--accent)">wch-ic.com</a></td>
+              </tr>
+            </table>
+            <br>
+            After installing, plug in the ESP32. Open <strong>Device Manager → Ports (COM &amp; LPT)</strong>
+            and confirm a <code>COMx</code> port appears. Note the number (e.g. <code>COM4</code>).
+          </div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">Install VS Code + PlatformIO</div>
+          <div class="step-desc">
+            <ol style="margin-left:18px;font-size:14px;color:var(--muted);line-height:2">
+              <li>Download and install <a href="https://code.visualstudio.com/" style="color:var(--accent)">VS Code</a></li>
+              <li>Open VS Code → Extensions (<kbd>Ctrl+Shift+X</kbd>) → search <strong>PlatformIO IDE</strong> → Install</li>
+              <li>Restart VS Code when prompted — PlatformIO downloads its toolchain on first launch</li>
+            </ol>
+          </div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">Open the project</div>
+          <div class="step-desc">
+            <strong>File → Open Folder</strong> → select the <code>64x64\</code> folder.
+            PlatformIO detects <code>platformio.ini</code> and downloads all libraries automatically.
+          </div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">Edit <code>include\config.h</code></div>
+          <div class="step-desc">
+            WiFi credentials are entered on the device itself the first time (no hardcoding needed).
+            Only set your timezone offset here:
+            <div class="code-block" style="margin-top:8px">
+<span class="comment">// UTC offset in seconds — examples:</span>
+<span class="comment">//   UTC+0 (London):       0</span>
+<span class="comment">//   UTC+1 (Paris/Warsaw): 3600</span>
+<span class="comment">//   UTC-5 (New York):    -18000</span>
+<span class="kw">#define</span> TIMEZONE_OFFSET_SEC  <span class="val">3600</span>
+<span class="kw">#define</span> DAYLIGHT_OFFSET_SEC  <span class="val">0</span>
+            </div>
+          </div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">Upload the web UI (filesystem)</div>
+          <div class="step-desc">
+            This is an extra step unique to this project — the web UI lives in <code>data\index.html</code>
+            and must be flashed to the ESP32's filesystem separately from the firmware.
+            <br><br>
+            In VS Code, open the PlatformIO sidebar (alien icon) →
+            <strong>esp32dev → Platform → Upload Filesystem Image</strong>.
+            <br><br>
+            <em>Or</em> use the PlatformIO terminal (<strong>Terminal → New Terminal</strong>):
+            <div class="code-block" style="margin-top:8px">pio run --target uploadfs</div>
+            Wait for <code>SUCCESS</code> before continuing.
+          </div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">Upload the firmware</div>
+          <div class="step-desc">
+            Click the <strong>→ Upload</strong> button in the bottom status bar,
+            or use the PlatformIO sidebar → <strong>esp32dev → General → Upload</strong>.
+            <br><br>
+            <em>Or</em> via terminal:
+            <div class="code-block" style="margin-top:8px">pio run --target upload</div>
+            PlatformIO auto-detects the COM port. If it picks the wrong one, add to <code>platformio.ini</code>:
+            <div class="code-block" style="margin-top:8px">upload_port = COM4</div>
+          </div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">Monitor serial output</div>
+          <div class="step-desc">
+            Click the <strong>🔌 Serial Monitor</strong> plug icon in the bottom status bar, or:
+            <div class="code-block" style="margin-top:8px">pio device monitor --port COM4 --baud 115200</div>
+            On first boot you'll see the device enter AP mode. After WiFi is configured, it prints the IP address.
+          </div>
+        </div>
+      </li>
+    </ol>
+
+    <h3>First-boot WiFi setup</h3>
+    <div class="callout callout-info">
+      <strong>Boot sequence</strong>
+      Panel flashes <strong>blue</strong> → tries saved WiFi credentials →
+      if none saved, enters AP mode and displays a <strong>QR code</strong> on the matrix.<br><br>
+      <strong>Scan the QR code</strong> with your phone — it auto-joins the <code>QRClock-Setup</code> network
+      and the captive portal appears. Enter your home WiFi credentials → device reboots → connects automatically.<br><br>
+      The serial monitor prints <code>UI: http://192.168.x.x</code> — open that address in any browser
+      on the same network to access the control panel.
+    </div>
+
+    <h3>Changing WiFi network</h3>
+    <div class="callout callout-tip">
+      Open the web UI → scroll to the bottom → <strong>Reset WiFi credentials</strong>.
+      The device reboots into AP mode showing the setup QR code again.
+      Alternatively, power-cycle the device 3× quickly or hold the EN button for 5 s on most boards.
+    </div>
+
+    <h3>QR code details</h3>
+    <p style="font-size:14px;color:var(--muted)">
+      Time is encoded as <code>HH:MM</code> (5 characters) in a
+      <strong>Version 1 QR code (21×21 modules)</strong> at Error Correction level L.
+      Rendered at <strong>2 px per module</strong>, centred on the 64×64 matrix with an
+      11-pixel quiet zone on each side. Updates once per minute.
+    </p>
+  </section>
+
+  <!-- ════════════════════════════════════════════════════
+       TROUBLESHOOTING
+       ════════════════════════════════════════════════════ -->
+  <section id="troubleshooting">
+    <h2>Troubleshooting</h2>
+    <ul class="trouble-list">
+      <li>
+        <div class="symptom">🔴 Panel stays dark / no image</div>
+        <div class="fix">Check 5 V supply connection to the panel. Verify the ribbon cable is in the <strong>IN</strong> port, pin 1 aligned. Try <code>MATRIX_BRIGHTNESS</code> = 200 temporarily.</div>
+      </li>
+      <li>
+        <div class="symptom">🌈 Wrong colours / corrupted image</div>
+        <div class="fix">R1/G1/B1/R2/G2/B2 wires are likely swapped. Double-check the colour-pin mapping in the table above. Also verify <code>E_PIN 18</code> is wired — without it, 64-row panels show a doubled 32-row image.</div>
+      </li>
+      <li>
+        <div class="symptom">🕐 Time is wrong by N hours</div>
+        <div class="fix">Adjust <code>TIMEZONE_OFFSET_SEC</code> in <code>config.h</code>. Value is seconds east of UTC (e.g. UTC+2 → <code>7200</code>).</div>
+      </li>
+      <li>
+        <div class="symptom">🪟 COM port not found / upload fails on Windows</div>
+        <div class="fix">Install the correct USB driver (CP210x or CH340 — see Step 1 above). Check Device Manager → Ports. If the port disappears during upload, try a different USB cable (some cables are charge-only). Add <code>upload_port = COMx</code> to <code>platformio.ini</code> if PlatformIO picks the wrong port.</div>
+      </li>
+      <li>
+        <div class="symptom">📶 WiFi never connects</div>
+        <div class="fix">ESP32 supports only 2.4 GHz networks — check your router isn't 5 GHz only. If the panel shows the AP QR code on every boot, the credentials weren't saved; complete the captive portal flow fully before closing the browser.</div>
+      </li>
+      <li>
+        <div class="symptom">📱 QR code won't scan</div>
+        <div class="fix">Most phone cameras scan light-on-dark QR codes fine. If struggling, try Google Lens or a dedicated QR scanner app. Also check the quiet zone isn't blocked by a case or bezel.</div>
+      </li>
+      <li>
+        <div class="symptom">⚡ ESP32 resets randomly</div>
+        <div class="fix">Under-powered supply. The DMA matrix driver is CPU/memory intensive. Ensure the 5 V supply to the panel has good GND continuity with the ESP32, and that the ESP32 USB supply is stable (≥ 500 mA).</div>
+      </li>
+    </ul>
+  </section>
+
+</div><!-- .page -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// Colour constants
+// ═══════════════════════════════════════════════════════════════
+const C = {
+  red:    '#ff5555',
+  green:  '#3fb950',
+  blue:   '#58a6ff',
+  gold:   '#e3b341',
+  orange: '#f0883e',
+  purple: '#bc8cff',
+  pink:   '#f778ba',
+  gray:   '#8b949e',
+  bg:     '#21262d',
+  bg3:    '#161b22',
+  border: '#30363d',
+  text:   '#e6edf3',
+  muted:  '#8b949e',
+};
+
+// ═══════════════════════════════════════════════════════════════
+// Connection data
+// ═══════════════════════════════════════════════════════════════
+const CONNECTIONS = [
+  { sig:'R1',  type:'Color',   gpio:25, hub:1,  col:C.red,    desc:'Red data — upper half'    },
+  { sig:'G1',  type:'Color',   gpio:26, hub:2,  col:C.green,  desc:'Green data — upper half'  },
+  { sig:'B1',  type:'Color',   gpio:27, hub:3,  col:C.blue,   desc:'Blue data — upper half'   },
+  { sig:'R2',  type:'Color',   gpio:14, hub:5,  col:C.red,    desc:'Red data — lower half'    },
+  { sig:'G2',  type:'Color',   gpio:12, hub:6,  col:C.green,  desc:'Green data — lower half'  },
+  { sig:'B2',  type:'Color',   gpio:13, hub:7,  col:C.blue,   desc:'Blue data — lower half'   },
+  { sig:'A',   type:'Address', gpio:23, hub:9,  col:C.gold,   desc:'Row address bit 0'        },
+  { sig:'B',   type:'Address', gpio:19, hub:10, col:C.gold,   desc:'Row address bit 1'        },
+  { sig:'C',   type:'Address', gpio:5,  hub:11, col:C.gold,   desc:'Row address bit 2'        },
+  { sig:'D',   type:'Address', gpio:17, hub:12, col:C.gold,   desc:'Row address bit 3'        },
+  { sig:'E',   type:'Address', gpio:18, hub:16, col:C.gold,   desc:'Row address bit 4 (64-row!)'},
+  { sig:'CLK', type:'Control', gpio:16, hub:13, col:C.orange, desc:'Shift register clock'     },
+  { sig:'LAT', type:'Control', gpio:4,  hub:14, col:C.purple, desc:'Latch / strobe'           },
+  { sig:'OE',  type:'Control', gpio:15, hub:15, col:C.pink,   desc:'Output enable (active low)'},
+  { sig:'GND', type:'Power',   gpio:'GND', hub:'4, 8', col:C.gray, desc:'Common ground'      },
+];
+
+// Type badge colours
+const TYPE_COL = {
+  Color:   { bg:'#3d1818', fg:C.red    },
+  Address: { bg:'#2d2510', fg:C.gold   },
+  Control: { bg:'#1a1a30', fg:C.purple },
+  Power:   { bg:'#1c1c1c', fg:C.gray   },
+};
+
+// ── Populate connection table ─────────────────────────────────
+const tbody = document.getElementById('conn-tbody');
+CONNECTIONS.forEach(c => {
+  const tc = TYPE_COL[c.type];
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><span class="sig-cell"><span class="signal-dot" style="background:${c.col}"></span>${c.sig}</span></td>
+    <td><span class="type-badge" style="background:${tc.bg};color:${tc.fg}">${c.type}</span></td>
+    <td class="gpio-num">${c.gpio}</td>
+    <td class="hub-pin">${c.hub}</td>
+    <td style="color:var(--muted);font-size:13px">${c.desc}</td>`;
+  tbody.appendChild(tr);
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SVG helpers
+// ═══════════════════════════════════════════════════════════════
+function svgEl(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  Object.entries(attrs).forEach(([k,v]) => el.setAttribute(k,v));
+  return el;
+}
+function rect(x,y,w,h,attrs={}) {
+  return svgEl('rect',{x,y,width:w,height:h,...attrs});
+}
+function text(x,y,str,attrs={}) {
+  const el = svgEl('text',{x,y,'font-family':'monospace','font-size':'11',...attrs});
+  el.textContent = str;
+  return el;
+}
+function circle(cx,cy,r,attrs={}) {
+  return svgEl('circle',{cx,cy,r,...attrs});
+}
+function line(x1,y1,x2,y2,attrs={}) {
+  return svgEl('line',{x1,y1,x2,y2,...attrs});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ESP32 pinout SVG
+// viewBox="0 0 370 510"
+// ═══════════════════════════════════════════════════════════════
+(function buildESP32() {
+  const svg = document.getElementById('esp32-svg');
+
+  // Signal lookup by GPIO number
+  const sigMap = {};
+  CONNECTIONS.forEach(c => { if (typeof c.gpio === 'number') sigMap[c.gpio] = c; });
+
+  // 38-pin DevKit layout (left side then right side, top-down, USB at top)
+  const LEFT_PINS = [
+    {label:'GND', gpio:null},
+    {label:'3V3', gpio:null},
+    {label:'EN',  gpio:null},
+    {label:'VP',  gpio:36},
+    {label:'VN',  gpio:39},
+    {label:'IO34',gpio:34},
+    {label:'IO35',gpio:35},
+    {label:'IO32',gpio:32},
+    {label:'IO33',gpio:33},
+    {label:'IO25',gpio:25},
+    {label:'IO26',gpio:26},
+    {label:'IO27',gpio:27},
+    {label:'IO14',gpio:14},
+    {label:'IO12',gpio:12},
+    {label:'GND', gpio:null},
+    {label:'IO13',gpio:13},
+    {label:'IO9', gpio:9},
+    {label:'IO10',gpio:10},
+    {label:'IO11',gpio:11},
+  ];
+  const RIGHT_PINS = [
+    {label:'5V',  gpio:null},
+    {label:'GND', gpio:null},
+    {label:'IO23',gpio:23},
+    {label:'IO22',gpio:22},
+    {label:'TX0', gpio:1},
+    {label:'RX0', gpio:3},
+    {label:'IO21',gpio:21},
+    {label:'GND', gpio:null},
+    {label:'IO19',gpio:19},
+    {label:'IO18',gpio:18},
+    {label:'IO5', gpio:5},
+    {label:'IO17',gpio:17},
+    {label:'IO16',gpio:16},
+    {label:'IO4', gpio:4},
+    {label:'IO0', gpio:0},
+    {label:'IO2', gpio:2},
+    {label:'IO15',gpio:15},
+    {label:'IO8', gpio:8},
+    {label:'IO7', gpio:7},
+  ];
+
+  const N = 19;
+  const PIN_STEP = 24;
+  const PIN_Y0   = 60;
+  const BODY_X   = 105;
+  const BODY_W   = 160;
+  const BODY_Y   = 45;
+  const BODY_H   = PIN_STEP * (N-1) + 20;
+  const DOT_R    = 4;
+
+  // Background
+  svg.appendChild(rect(0,0,370,510,{fill:C.bg3}));
+
+  // USB connector notch at top
+  svg.appendChild(rect(155, 5, 60, 18, {fill:'#444', rx:'3'}));
+  const usbTxt = text(185, 18, 'USB', {'font-size':'10', fill:C.muted, 'text-anchor':'middle'});
+  svg.appendChild(usbTxt);
+
+  // Module body
+  svg.appendChild(rect(BODY_X, BODY_Y, BODY_W, BODY_H, {fill:'#1a1a2e', stroke:C.border, 'stroke-width':'1.5', rx:'4'}));
+  const modLabel = text(185, BODY_Y + BODY_H/2 + 4, 'ESP32-WROOM-32D',
+    {'font-size':'10', fill:'#333', 'text-anchor':'middle', 'font-family':'sans-serif'});
+  svg.appendChild(modLabel);
+
+  // Antenna area at bottom
+  svg.appendChild(rect(BODY_X, BODY_Y+BODY_H-40, BODY_W, 40, {fill:'#111130', rx:'4', opacity:'0.7'}));
+  const antTxt = text(185, BODY_Y+BODY_H-15, '▓▓▓ antenna ▓▓▓',
+    {'font-size':'8', fill:'#2a2a50', 'text-anchor':'middle', 'font-family':'monospace'});
+  svg.appendChild(antTxt);
+
+  function pinColor(gpio) {
+    if (gpio === null) return C.muted;
+    const s = sigMap[gpio];
+    return s ? s.col : C.muted;
+  }
+
+  function drawPin(side, idx, pin) {
+    const isLeft = side === 'left';
+    const y = PIN_Y0 + idx * PIN_STEP;
+    const dotX = isLeft ? BODY_X : BODY_X + BODY_W;
+    const stubX = isLeft ? BODY_X - 16 : BODY_X + BODY_W + 16;
+    const labelX = isLeft ? BODY_X - 22 : BODY_X + BODY_W + 22;
+    const anchor = isLeft ? 'end' : 'start';
+
+    const col = pinColor(pin.gpio);
+    const isUsed = pin.gpio !== null && sigMap[pin.gpio];
+
+    // stub line
+    svg.appendChild(line(dotX, y, stubX, y, {
+      stroke: isUsed ? col : C.border,
+      'stroke-width': isUsed ? '2' : '1',
+    }));
+
+    // dot
+    svg.appendChild(circle(dotX, y, DOT_R, {
+      fill: isUsed ? col : C.bg3,
+      stroke: isUsed ? col : C.border,
+      'stroke-width': '1.5',
+    }));
+
+    // signal badge if used
+    if (isUsed) {
+      const sig = sigMap[pin.gpio];
+      const badgeX = isLeft ? BODY_X - 70 : BODY_X + BODY_W + 26;
+      const badgeW = 36;
+      svg.appendChild(rect(badgeX, y-9, badgeW, 18, {
+        fill: col + '28', stroke: col, 'stroke-width':'1', rx:'3',
+      }));
+      const badgeTxt = text(badgeX + badgeW/2, y+4, sig.sig, {
+        'font-size':'9', fill:col, 'text-anchor':'middle', 'font-weight':'700',
+      });
+      svg.appendChild(badgeTxt);
+    }
+
+    // pin label
+    const labelText = text(labelX, y+4, pin.label, {
+      fill: isUsed ? C.text : C.muted,
+      'text-anchor': anchor,
+      'font-size': '10',
+    });
+    svg.appendChild(labelText);
+  }
+
+  LEFT_PINS.forEach((p,i)  => drawPin('left',  i, p));
+  RIGHT_PINS.forEach((p,i) => drawPin('right', i, p));
+
+  // Legend at bottom
+  const ly = BODY_Y + BODY_H + 22;
+  svg.appendChild(circle(14, ly, 5, {fill: C.red,  stroke:'none'}));
+  svg.appendChild(text(22, ly+4, 'Color', {'font-size':'9', fill:C.muted}));
+  svg.appendChild(circle(68, ly, 5, {fill: C.gold, stroke:'none'}));
+  svg.appendChild(text(76, ly+4, 'Address', {'font-size':'9', fill:C.muted}));
+  svg.appendChild(circle(136, ly, 5, {fill: C.orange, stroke:'none'}));
+  svg.appendChild(text(144, ly+4, 'Control', {'font-size':'9', fill:C.muted}));
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// HUB75E connector SVG
+// viewBox="0 0 320 380"
+// ═══════════════════════════════════════════════════════════════
+(function buildHUB75() {
+  const svg = document.getElementById('hub75-svg');
+
+  // Pin definitions: [left col, right col] per row
+  // [pinNum, signal, color]
+  const ROWS = [
+    [{n:1,  sig:'R1',  col:C.red   }, {n:2,  sig:'G1',  col:C.green }],
+    [{n:3,  sig:'B1',  col:C.blue  }, {n:4,  sig:'GND', col:C.gray  }],
+    [{n:5,  sig:'R2',  col:C.red   }, {n:6,  sig:'G2',  col:C.green }],
+    [{n:7,  sig:'B2',  col:C.blue  }, {n:8,  sig:'GND', col:C.gray  }],
+    [{n:9,  sig:'A',   col:C.gold  }, {n:10, sig:'B',   col:C.gold  }],
+    [{n:11, sig:'C',   col:C.gold  }, {n:12, sig:'D',   col:C.gold  }],
+    [{n:13, sig:'CLK', col:C.orange}, {n:14, sig:'LAT', col:C.purple}],
+    [{n:15, sig:'OE',  col:C.pink  }, {n:16, sig:'E',   col:C.gold  }],
+  ];
+
+  const ROW_H   = 36;
+  const COL_W   = 120;
+  const BODY_X  = 40;
+  const BODY_Y  = 30;
+  const BODY_W  = 240;
+  const BODY_H  = ROWS.length * ROW_H + 20;
+  const PIN_R   = 9;
+
+  // bg
+  svg.appendChild(rect(0,0,320,380,{fill:C.bg3}));
+
+  // Connector body
+  svg.appendChild(rect(BODY_X, BODY_Y, BODY_W, BODY_H,
+    {fill:'#1a1a1a', stroke:'#555', 'stroke-width':'2', rx:'6'}));
+
+  // Key notch (top centre)
+  svg.appendChild(rect(BODY_X + BODY_W/2 - 20, BODY_Y - 8, 40, 14,
+    {fill:'#111', stroke:'#555', 'stroke-width':'2', rx:'3'}));
+  svg.appendChild(text(BODY_X + BODY_W/2, BODY_Y + 1, '▼ key',
+    {'font-size':'8', fill:C.muted, 'text-anchor':'middle'}));
+
+  // Pin 1 indicator
+  svg.appendChild(circle(BODY_X + 10, BODY_Y + 10, 4,
+    {fill:'none', stroke:C.red, 'stroke-width':'1.5'}));
+  svg.appendChild(text(BODY_X + 10, BODY_Y + 14, '1',
+    {'font-size':'8', fill:C.red, 'text-anchor':'middle'}));
+
+  ROWS.forEach((row, ri) => {
+    const y = BODY_Y + 20 + ri * ROW_H;
+    const cols = [
+      { pin: row[0], cx: BODY_X + 60  },
+      { pin: row[1], cx: BODY_X + 180 },
+    ];
+    cols.forEach(({pin, cx}) => {
+      // Pin circle background
+      svg.appendChild(circle(cx, y + ROW_H/2, PIN_R,
+        {fill: pin.col + '33', stroke: pin.col, 'stroke-width':'1.5'}));
+
+      // Pin number (small, inside circle)
+      svg.appendChild(text(cx, y + ROW_H/2 + 3, pin.n,
+        {'font-size':'8', fill:C.muted, 'text-anchor':'middle'}));
+
+      // Signal label below
+      svg.appendChild(text(cx, y + ROW_H/2 + 17, pin.sig, {
+        'font-size':'10',
+        fill: pin.col,
+        'text-anchor':'middle',
+        'font-weight': '700',
+      }));
+    });
+
+    // Row separator
+    if (ri < ROWS.length - 1) {
+      svg.appendChild(line(
+        BODY_X + 4, y + ROW_H,
+        BODY_X + BODY_W - 4, y + ROW_H,
+        {stroke:C.border, 'stroke-width':'0.5'}
+      ));
+    }
+  });
+
+  // Column labels
+  svg.appendChild(text(BODY_X + 60, BODY_Y + BODY_H + 18, 'Left column (odd pins)',
+    {'font-size':'9', fill:C.muted, 'text-anchor':'middle'}));
+  svg.appendChild(text(BODY_X + 180, BODY_Y + BODY_H + 18, 'Right column (even pins)',
+    {'font-size':'9', fill:C.muted, 'text-anchor':'middle'}));
+
+  // Red stripe indicator
+  svg.appendChild(rect(BODY_X - 14, BODY_Y + 18, 8, ROWS.length * ROW_H - 8,
+    {fill:C.red + '44', stroke:C.red, 'stroke-width':'1', rx:'3'}));
+  svg.appendChild(text(BODY_X - 10, BODY_Y + BODY_H + 18, 'red stripe',
+    {'font-size':'8', fill:C.red, 'text-anchor':'middle', 'writing-mode':'horizontal-tb'}));
+
+  // Note about cable orientation
+  const noteY = BODY_Y + BODY_H + 32;
+  svg.appendChild(text(160, noteY, 'Red stripe on ribbon cable = Pin 1 side',
+    {'font-size':'10', fill:C.muted, 'text-anchor':'middle', 'font-family':'sans-serif'}));
+})();
+</script>
+</body>
+</html>
