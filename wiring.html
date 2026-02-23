@@ -323,7 +323,7 @@
 
       <!-- ESP32 pinout diagram -->
       <figure class="diagram-box">
-        <figcaption>ESP32-WROOM-32D — 38-pin DevKit</figcaption>
+        <figcaption>ESP32-WROOM-32D — 30-pin DevKit V1</figcaption>
         <svg id="esp32-svg" viewBox="0 0 370 510" xmlns="http://www.w3.org/2000/svg"></svg>
       </figure>
 
@@ -648,11 +648,11 @@ const CONNECTIONS = [
   { sig:'R2',  type:'Color',   gpio:14, hub:5,  col:C.red,    desc:'Red data — lower half'    },
   { sig:'G2',  type:'Color',   gpio:12, hub:6,  col:C.green,  desc:'Green data — lower half'  },
   { sig:'B2',  type:'Color',   gpio:13, hub:7,  col:C.blue,   desc:'Blue data — lower half'   },
-  { sig:'A',   type:'Address', gpio:23, hub:9,  col:C.gold,   desc:'Row address bit 0'        },
-  { sig:'B',   type:'Address', gpio:19, hub:10, col:C.gold,   desc:'Row address bit 1'        },
+  { sig:'A',   type:'Address', gpio:32, hub:9,  col:C.gold,   desc:'Row address bit 0'        },
+  { sig:'B',   type:'Address', gpio:33, hub:10, col:C.gold,   desc:'Row address bit 1'        },
   { sig:'C',   type:'Address', gpio:5,  hub:11, col:C.gold,   desc:'Row address bit 2'        },
   { sig:'D',   type:'Address', gpio:17, hub:12, col:C.gold,   desc:'Row address bit 3'        },
-  { sig:'E',   type:'Address', gpio:18, hub:16, col:C.gold,   desc:'Row address bit 4 (64-row!)'},
+  { sig:'E',   type:'Address', gpio:2,  hub:16, col:C.gold,   desc:'Row address bit 4 (64-row!)'},
   { sig:'CLK', type:'Control', gpio:16, hub:13, col:C.orange, desc:'Shift register clock'     },
   { sig:'LAT', type:'Control', gpio:4,  hub:14, col:C.purple, desc:'Latch / strobe'           },
   { sig:'OE',  type:'Control', gpio:15, hub:15, col:C.pink,   desc:'Output enable (active low)'},
@@ -716,48 +716,40 @@ function line(x1,y1,x2,y2,attrs={}) {
   CONNECTIONS.forEach(c => { if (typeof c.gpio === 'number') sigMap[c.gpio] = c; });
 
   // 38-pin DevKit layout (left side then right side, top-down, USB at top)
-  // Espressif ESP32-DevKitC V4 layout (3V3 top-left, VIN top-right)
+  // DOIT ESP32 DevKit V1 — 30-pin layout (3V3 top-left, GND top-right)
   const LEFT_PINS = [
     {label:'3V3', gpio:null},
+    {label:'EN',  gpio:null},
+    {label:'VP',  gpio:36},
+    {label:'VN',  gpio:39},
+    {label:'IO34',gpio:34},
+    {label:'IO35',gpio:35},
+    {label:'IO32',gpio:32},
+    {label:'IO33',gpio:33},
+    {label:'IO25',gpio:25},
+    {label:'IO26',gpio:26},
+    {label:'IO27',gpio:27},
+    {label:'IO14',gpio:14},
+    {label:'IO12',gpio:12},
     {label:'GND', gpio:null},
-    {label:'IO15',gpio:15},
-    {label:'IO2', gpio:2},
-    {label:'IO0', gpio:0},
-    {label:'IO4', gpio:4},
-    {label:'IO16',gpio:16},
-    {label:'IO17',gpio:17},
-    {label:'IO5', gpio:5},
-    {label:'IO18',gpio:18},
-    {label:'IO19',gpio:19},
-    {label:'IO21',gpio:21},
-    {label:'RX0', gpio:3},
-    {label:'TX0', gpio:1},
-    {label:'IO22',gpio:22},
-    {label:'IO23',gpio:23},
-    {label:'GND', gpio:null},
-    {label:'GND', gpio:null},
-    {label:'GND', gpio:null},
+    {label:'VIN', gpio:null},
   ];
   const RIGHT_PINS = [
-    {label:'VIN', gpio:null},
     {label:'GND', gpio:null},
     {label:'IO13',gpio:13},
-    {label:'IO12',gpio:12},
-    {label:'IO14',gpio:14},
-    {label:'IO27',gpio:27},
-    {label:'IO26',gpio:26},
-    {label:'IO25',gpio:25},
-    {label:'IO33',gpio:33},
-    {label:'IO32',gpio:32},
-    {label:'IO35',gpio:35},
-    {label:'IO34',gpio:34},
-    {label:'VN',  gpio:39},
-    {label:'VP',  gpio:36},
-    {label:'EN',  gpio:null},
-    {label:'GND', gpio:null},
-    {label:'GND', gpio:null},
-    {label:'GND', gpio:null},
-    {label:'GND', gpio:null},
+    {label:'IO9', gpio:9},
+    {label:'IO10',gpio:10},
+    {label:'IO11',gpio:11},
+    {label:'IO5', gpio:5},
+    {label:'IO17',gpio:17},
+    {label:'IO16',gpio:16},
+    {label:'IO4', gpio:4},
+    {label:'IO0', gpio:0},
+    {label:'IO2', gpio:2},
+    {label:'IO15',gpio:15},
+    {label:'IO8', gpio:8},
+    {label:'IO7', gpio:7},
+    {label:'IO6', gpio:6},
   ];
 
   const N = 19;
