@@ -50,7 +50,7 @@ static void drawQRClock() {
     strftime(ts, sizeof(ts), "%H:%M", &ti);
     if (qrcode_initText(&qr, buf, 1, ECC_LOW, ts) != 0) return;
 
-    const int scale = 3;
+    const int scale = 2;  // 21×2=42px, leaving 11px white border on all sides for quiet zone
     const int off   = (64 - qr.size * scale) / 2;
     uint16_t white = matrix->color565(255, 255, 255);
     uint16_t black = matrix->color565(0,   0,   0);
