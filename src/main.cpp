@@ -25,7 +25,7 @@ static void matrixInit() {
     cfg.gpio.d   = D_PIN;   cfg.gpio.e   = E_PIN;
     cfg.gpio.lat = LAT_PIN; cfg.gpio.oe  = OE_PIN;  cfg.gpio.clk = CLK_PIN;
     cfg.clkphase = false;
-    cfg.driver = HUB75_I2S_CFG::ICN2038S;
+    cfg.driver = HUB75_I2S_CFG::FM6124;
     cfg.latch_blanking = 1;
     matrix = new MatrixPanel_I2S_DMA(cfg);
     matrix->begin();
