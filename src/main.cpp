@@ -14,7 +14,7 @@ MatrixPanel_I2S_DMA *matrix = nullptr;
 AppState              gState;
 SemaphoreHandle_t     gMutex;
 WiFiManager           wm;
-int8_t                gRowOffset = 16;  // confirmed correct for this panel
+int8_t                gRowOffset = 0;
 
 // ── Matrix init ──────────────────────────────────────────────────
 static void matrixInit() {
@@ -52,7 +52,7 @@ static void showAPQR(const char *apName) {
             if (qrcode_getModule(&qr, x, y))
                 for (int dy = 0; dy < scale; dy++)
                     for (int dx = 0; dx < scale; dx++)
-                        matrix->drawPixel(ox + x*scale + dx, (oy + y*scale + dy + 48) & 63, white);
+                        matrix->drawPixel(ox + x*scale + dx, oy + y*scale + dy, white);
 }
 
 // ── Animation task — pinned to Core 1 ────────────────────────────
@@ -132,16 +132,5 @@ void setup() {
 // ── loop — Core 0, web server housekeeping ────────────────────────
 void loop() {
     webServerTick();
-
-    // Serial offset tuning: type a number 0-63 and press Enter to adjust row offset.
-    // The correct value makes animations appear properly aligned on the panel.
-    if (Serial.available()) {
-        int v = Serial.parseInt();
-        if (v >= 0 && v <= 63) {
-            gRowOffset = (int8_t)v;
-            Serial.printf("rowOffset = %d\n", gRowOffset);
-        }
-    }
-
     delay(100);
 }

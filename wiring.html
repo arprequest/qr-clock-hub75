@@ -354,6 +354,16 @@
       The panel has two IDC connectors labelled <em>IN</em> and <em>OUT</em>.
       The ESP32 ribbon cable plugs into <strong>IN</strong>. Pin 1 (red stripe on cable) aligns with the triangle/arrow marker on the PCB.
     </div>
+
+    <div class="callout callout-warn">
+      <strong>⚠️ E pin (pin 16) — critical for 64-row panels</strong>
+      Without E connected, only 32 rows are addressed and you see alternating bands of lit and dark rows.
+      <br><br>
+      <strong>Finding pin 16 on the IDC connector:</strong> The 16-pin IDC header has 2 rows of 8 pins.
+      Count pins 1–8 along the top row (starting from the R1 / red-stripe side), then pins 9–16 along the bottom row.
+      Pin 16 is at the <em>far end of the bottom row</em> — the corner diagonally opposite from pin 1 (R1).
+      This is where E (GPIO22) connects.
+    </div>
   </section>
 
   <!-- ════════════════════════════════════════════════════
@@ -591,7 +601,7 @@
       </li>
       <li>
         <div class="symptom">🌈 Wrong colours / corrupted image</div>
-        <div class="fix">R1/G1/B1/R2/G2/B2 wires are likely swapped. Double-check the colour-pin mapping in the table above. Also verify <code>E_PIN 18</code> is wired — without it, 64-row panels show a doubled 32-row image.</div>
+        <div class="fix">R1/G1/B1/R2/G2/B2 wires are likely swapped. Double-check the colour-pin mapping in the table above. Also verify <strong>E (GPIO22)</strong> is wired to <strong>pin 16 on the IDC connector</strong> — without it, 64-row panels show alternating lit/dark bands. Pin 16 is at position 8 counting per row, diagonally opposite from R1 (pin 1).</div>
       </li>
       <li>
         <div class="symptom">🕐 Time is wrong by N hours</div>
@@ -652,7 +662,7 @@ const CONNECTIONS = [
   { sig:'B',   type:'Address', gpio:19, hub:10, col:C.gold,   desc:'Row address bit 1'        },
   { sig:'C',   type:'Address', gpio:5,  hub:11, col:C.gold,   desc:'Row address bit 2'        },
   { sig:'D',   type:'Address', gpio:17, hub:12, col:C.gold,   desc:'Row address bit 3'        },
-  { sig:'E',   type:'Address', gpio:18, hub:16, col:C.gold,   desc:'Row address bit 4 (64-row!)'},
+  { sig:'E',   type:'Address', gpio:22, hub:16, col:C.gold,   desc:'Row address bit 4 (64-row!) — physically at pin 8 per-row (opposite corner from R1)'},
   { sig:'CLK', type:'Control', gpio:16, hub:13, col:C.orange, desc:'Shift register clock'     },
   { sig:'LAT', type:'Control', gpio:4,  hub:14, col:C.purple, desc:'Latch / strobe'           },
   { sig:'OE',  type:'Control', gpio:15, hub:15, col:C.pink,   desc:'Output enable (active low)'},
