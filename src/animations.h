@@ -69,12 +69,27 @@ static void drawSolid(const AppState &s) {
 }
 
 // ── Rainbow ─────────────────────────────────────────────────────
-static void drawRainbow(const AppState &s) {
-    static uint8_t offset = 0;
-    offset += 1 + (s.speed >> 5);
+// DIAGNOSTIC: 8 coloured bands of 8 rows each — raw drawPixel, no offset.
+// Row 0-7=Red  8-15=Orange  16-23=Yellow  24-31=Green
+// Row 32-39=Blue  40-47=Purple  48-55=Cyan  56-63=White
+static void drawRainbow(const AppState &) {
+    static bool done = false;
+    if (done) return;
+    done = true;
+    const uint16_t bands[8] = {
+        matrix->color565(255,   0,   0),  // 0-7   red
+        matrix->color565(255, 128,   0),  // 8-15  orange
+        matrix->color565(255, 255,   0),  // 16-23 yellow
+        matrix->color565(  0, 255,   0),  // 24-31 green
+        matrix->color565(  0,   0, 255),  // 32-39 blue
+        matrix->color565(128,   0, 255),  // 40-47 purple
+        matrix->color565(  0, 255, 255),  // 48-55 cyan
+        matrix->color565(255, 255, 255),  // 56-63 white
+    };
+    matrix->clearScreen();
     for (int y = 0; y < 64; y++)
         for (int x = 0; x < 64; x++)
-            px(x, y, hsv565((uint8_t)(offset + x*4 + y*2), 255, s.brightness));
+            matrix->drawPixel(x, y, bands[y / 8]);
 }
 
 // ── Fire ────────────────────────────────────────────────────────
