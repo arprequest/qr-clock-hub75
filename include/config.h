@@ -7,8 +7,8 @@
 
 // ── Time ──────────────────────────────────────────────────────
 // UTC offset in seconds:  UTC+1 = 3600,  UTC-5 = -18000
-#define TIMEZONE_OFFSET_SEC  3600
-#define DAYLIGHT_OFFSET_SEC  0
+#define TIMEZONE_OFFSET_SEC  -28800
+#define DAYLIGHT_OFFSET_SEC  3600
 
 // ── Display ───────────────────────────────────────────────────
 #define DEFAULT_BRIGHTNESS  100   // 0-255, can be changed via web UI
