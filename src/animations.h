@@ -36,21 +36,22 @@ static uint16_t hsv565(uint8_t h, uint8_t s, uint8_t v) {
 }
 
 // ── QR Clock ────────────────────────────────────────────────────
-static int qrLastMin = -1;
+static int qrLastSec = -1;
 
 static void drawQRClock() {
     struct tm ti{};
     if (!getLocalTime(&ti)) return;
-    if (ti.tm_min == qrLastMin) return;
-    qrLastMin = ti.tm_min;
+    if (ti.tm_sec == qrLastSec) return;
+    qrLastSec = ti.tm_sec;
 
-    uint8_t buf[57];   // qrcode_getBufferSize(1) == 57
+    uint8_t buf[110];   // qrcode_getBufferSize(3) == 107
     QRCode qr;
-    char ts[6];
-    strftime(ts, sizeof(ts), "%H:%M", &ti);
-    if (qrcode_initText(&qr, buf, 1, ECC_HIGH, ts) != 0) return;
+    char ts[20];
+    strftime(ts, sizeof(ts), "%H:%M:%S %a %d", &ti);  // e.g. "14:35:22 Mon 24"
+    if (qrcode_initText(&qr, buf, 3, ECC_HIGH, ts) != 0) return;
 
-    const int scale = 2;  // 21×2=42px, leaving 11px white border on all sides for quiet zone
+    // Version 3 = 29 modules; 29×2=58px → 3px border each side
+    const int scale = 2;
     const int off   = (64 - qr.size * scale) / 2;
     uint16_t white = matrix->color565(255, 255, 255);
     matrix->clearScreen();
@@ -172,7 +173,7 @@ static void drawPlasma(const AppState &s) {
 // ── Reset per-animation state on mode switch ────────────────────
 inline void resetAnimState(Mode m) {
     switch (m) {
-        case MODE_QR_CLOCK:    qrLastMin = -1;        break;
+        case MODE_QR_CLOCK:    qrLastSec = -1;        break;
         case MODE_FIRE:        fireReady = false;      break;
         case MODE_MATRIX_RAIN: rainReady = false;      break;
         default: break;
