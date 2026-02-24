@@ -258,6 +258,7 @@
   <a href="#wiring">Wiring</a>
   <a href="#power">Power</a>
   <a href="#software">Software</a>
+  <a href="#usbipd">WSL / usbipd</a>
   <a href="#troubleshooting">Troubleshooting</a>
 </nav>
 
@@ -561,6 +562,107 @@
         </div>
       </li>
     </ol>
+
+    <h3 id="usbipd">Flashing from WSL (usbipd-win)</h3>
+
+    <p style="font-size:14px;color:var(--muted);margin-bottom:16px">
+      WSL2 cannot access USB devices directly. <strong>usbipd-win</strong> forwards the ESP32's
+      serial port from Windows into WSL so PlatformIO can flash normally via <code>/dev/ttyUSB0</code>.
+    </p>
+
+    <div class="callout callout-warn">
+      <strong>Requirements</strong>
+      WSL <strong>2</strong> (not WSL 1) — check with <code>wsl -l -v</code> in PowerShell.
+      The USB serial driver must already be installed in Windows (CP210x or CH340 — see Step 1 above).
+    </div>
+
+    <h3 style="font-size:14px;margin:20px 0 10px">One-time setup</h3>
+    <ol class="steps">
+      <li>
+        <div class="step-content">
+          <div class="step-title">Install usbipd-win on Windows</div>
+          <div class="step-desc">
+            Download and run the latest <code>.msi</code> from
+            <a href="https://github.com/dorssel/usbipd-win/releases" style="color:var(--accent)">github.com/dorssel/usbipd-win/releases</a>.
+            No reboot required.
+          </div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">Install usbip tools inside WSL</div>
+          <div class="step-desc">
+            <div class="code-block">sudo apt update &amp;&amp; sudo apt install -y linux-tools-generic hwdata
+sudo update-alternatives --install /usr/local/bin/usbip usbip \
+  /usr/lib/linux-tools/$(uname -r)/usbip 20 2>/dev/null || true</div>
+            <em style="font-size:13px;color:var(--muted)">If the kernel-specific path doesn't exist, just the first line is fine — newer kernels include usbip already.</em>
+          </div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">Bind the device (PowerShell as Administrator, once per device)</div>
+          <div class="step-desc">
+            Plug in the ESP32, then list USB devices:
+            <div class="code-block">usbipd list</div>
+            Find the row for your serial adapter (<code>CP210x</code>, <code>CH340</code>, or similar).
+            Note the <strong>BUSID</strong> (e.g. <code>2-3</code>), then bind it:
+            <div class="code-block">usbipd bind --busid 2-3</div>
+            Binding persists across reboots — you only need to do this once per device.
+          </div>
+        </div>
+      </li>
+    </ol>
+
+    <h3 style="font-size:14px;margin:20px 0 10px">Every flashing session</h3>
+    <ol class="steps">
+      <li>
+        <div class="step-content">
+          <div class="step-title">Attach to WSL (PowerShell — no admin required after binding)</div>
+          <div class="step-desc">
+            <div class="code-block">usbipd attach --wsl --busid 2-3</div>
+            The device is now detached from Windows and forwarded to WSL.
+            <br><em style="font-size:13px;color:var(--muted)">Replace <code>2-3</code> with your actual BUSID.</em>
+          </div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">Verify the port exists in WSL</div>
+          <div class="step-desc">
+            <div class="code-block">ls /dev/ttyUSB*</div>
+            Should print <code>/dev/ttyUSB0</code>. If not, check that the ESP32 is plugged in
+            and the driver is installed in Windows.
+          </div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">Flash and monitor as normal</div>
+          <div class="step-desc">
+            <div class="code-block">pio run --target upload
+pio device monitor</div>
+            PlatformIO uses <code>/dev/ttyUSB0</code> as configured in <code>platformio.ini</code>.
+          </div>
+        </div>
+      </li>
+      <li>
+        <div class="step-content">
+          <div class="step-title">Detach when done (optional)</div>
+          <div class="step-desc">
+            Detaching hands the port back to Windows (e.g. if you want to use it in Device Manager or Arduino IDE):
+            <div class="code-block">usbipd detach --busid 2-3</div>
+            Unplugging the ESP32 also detaches it automatically.
+          </div>
+        </div>
+      </li>
+    </ol>
+
+    <div class="callout callout-tip">
+      <strong>Tip — find your BUSID quickly</strong>
+      Run <code>usbipd list</code> before and after plugging in the ESP32.
+      The new row that appears is your device.
+    </div>
 
     <h3>First-boot WiFi setup</h3>
     <div class="callout callout-info">
